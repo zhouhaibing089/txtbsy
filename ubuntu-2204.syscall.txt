@@ -1,0 +1,15 @@
+2474  openat(AT_FDCWD, "/root/.ash_history", O_WRONLY|O_CREAT|O_APPEND, 0600) = 3
+2613  execve("/app", ["/app"], 0x559240ec4660 /* 6 vars */) = 0
+2613  openat(AT_FDCWD, "/sys/kernel/mm/transparent_hugepage/hpage_pmd_size", O_RDONLY) = 3
+2613  --- SIGURG {si_signo=SIGURG, si_code=SI_TKILL, si_pid=7, si_uid=0} ---
+2613  --- SIGURG {si_signo=SIGURG, si_code=SI_TKILL, si_pid=7, si_uid=0} ---
+2613  openat(AT_FDCWD, "/etc/localtime", O_RDONLY) = 3
+2613  openat(AT_FDCWD, "/app", O_RDONLY|O_CLOEXEC) = 3
+2617  --- SIGURG {si_signo=SIGURG, si_code=SI_TKILL, si_pid=7, si_uid=0} ---
+2613  openat(AT_FDCWD, "/app", O_RDWR|O_CREAT|O_TRUNC|O_CLOEXEC, 0666) = -1 ETXTBSY (Text file busy)
+2616  +++ exited with 1 +++
+2617  +++ exited with 1 +++
+2615  +++ exited with 1 +++
+2614  +++ exited with 1 +++
+2613  +++ exited with 1 +++
+2474  --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=7, si_uid=0, si_status=1, si_utime=0, si_stime=0} ---

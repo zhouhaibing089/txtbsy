@@ -1,0 +1,37 @@
+2705  openat(AT_FDCWD, "/root/.ash_history", O_WRONLY|O_CREAT|O_APPEND, 0600) = 3
+2895  execve("/app", ["/app"], 0x559425259660 /* 6 vars */) = 0
+2895  openat(AT_FDCWD, "/sys/kernel/mm/transparent_hugepage/hpage_pmd_size", O_RDONLY) = 3
+2895  openat(AT_FDCWD, "/etc/localtime", O_RDONLY) = 3
+2895  openat(AT_FDCWD, "/app", O_RDONLY|O_CLOEXEC) = 3
+2895  --- SIGURG {si_signo=SIGURG, si_code=SI_TKILL, si_pid=8, si_uid=0} ---
+2895  --- SIGURG {si_signo=SIGURG, si_code=SI_TKILL, si_pid=8, si_uid=0} ---
+2895  --- SIGURG {si_signo=SIGURG, si_code=SI_TKILL, si_pid=8, si_uid=0} ---
+2895  --- SIGURG {si_signo=SIGURG, si_code=SI_TKILL, si_pid=8, si_uid=0} ---
+2895  --- SIGURG {si_signo=SIGURG, si_code=SI_TKILL, si_pid=8, si_uid=0} ---
+2895  --- SIGURG {si_signo=SIGURG, si_code=SI_TKILL, si_pid=8, si_uid=0} ---
+2895  --- SIGURG {si_signo=SIGURG, si_code=SI_TKILL, si_pid=8, si_uid=0} ---
+2895  --- SIGURG {si_signo=SIGURG, si_code=SI_TKILL, si_pid=8, si_uid=0} ---
+2895  openat(AT_FDCWD, "/app", O_RDWR|O_CREAT|O_TRUNC|O_CLOEXEC, 0666) = 3
+2896  +++ exited with 0 +++
+2897  +++ exited with 0 +++
+2898  +++ exited with 0 +++
+2895  +++ exited with 0 +++
+2705  --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=8, si_uid=0, si_status=0, si_utime=0, si_stime=1} ---
+2900  execve("/app", ["/app"], 0x559425259660 /* 6 vars */) = 0
+2900  openat(AT_FDCWD, "/sys/kernel/mm/transparent_hugepage/hpage_pmd_size", O_RDONLY) = 3
+2900  --- SIGURG {si_signo=SIGURG, si_code=SI_TKILL, si_pid=12, si_uid=0} ---
+2900  openat(AT_FDCWD, "/etc/localtime", O_RDONLY) = 3
+2900  openat(AT_FDCWD, "/app", O_RDONLY|O_CLOEXEC) = 3
+2904  --- SIGURG {si_signo=SIGURG, si_code=SI_TKILL, si_pid=12, si_uid=0} ---
+2904  --- SIGURG {si_signo=SIGURG, si_code=SI_TKILL, si_pid=12, si_uid=0} ---
+2904  --- SIGURG {si_signo=SIGURG, si_code=SI_TKILL, si_pid=12, si_uid=0} ---
+2904  --- SIGURG {si_signo=SIGURG, si_code=SI_TKILL, si_pid=12, si_uid=0} ---
+2904  --- SIGURG {si_signo=SIGURG, si_code=SI_TKILL, si_pid=12, si_uid=0} ---
+2904  --- SIGURG {si_signo=SIGURG, si_code=SI_TKILL, si_pid=12, si_uid=0} ---
+2902  openat(AT_FDCWD, "/app", O_RDWR|O_CREAT|O_TRUNC|O_CLOEXEC, 0666) = -1 ETXTBSY (Text file busy)
+2904  +++ exited with 1 +++
+2902  +++ exited with 1 +++
+2901  +++ exited with 1 +++
+2903  +++ exited with 1 +++
+2900  +++ exited with 1 +++
+2705  --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=12, si_uid=0, si_status=1, si_utime=0, si_stime=0} ---
