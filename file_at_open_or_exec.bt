@@ -2,37 +2,167 @@
 
 #include <linux/fs.h>
 #include <linux/types.h>
+#include <linux/binfmts.h>
 
 kretprobe:do_filp_open /comm == "sh" || comm == "app"/ {
-        printf("[open] %s: %d %d\n", comm, ((struct file *)retval)->f_inode->i_writecount.counter, ((struct file *)retval)->f_inode->i_ino);
+    $file = (struct file *)retval;
+    printf("[ret do_filp_open     ] %s at inode[%p]: %d %d\n", comm, $file->f_inode, $file->f_inode->i_writecount.counter, $file->f_inode->i_ino);
 }
 
 kretprobe:do_open_execat /comm == "sh" || comm == "app"/ {
-        printf("[exec] %s: %d %d\n", comm, ((struct file *)retval)->f_inode->i_writecount.counter, ((struct file *)retval)->f_inode->i_ino);
+    $file = (struct file *)retval;
+    printf("[ret do_open_execat   ] %s at inode[%p]: %d %d\n", comm, $file->f_inode, $file->f_inode->i_writecount.counter, $file->f_inode->i_ino);
+}
+
+kprobe:free_bprm /comm == "sh" || comm == "app"/ {
+    $bprm = (struct linux_binprm *)arg0;
+    printf("[free_bprm            ] %s at inode[%p]: %d %d\n", comm, $bprm->file->f_inode, $bprm->file->f_inode->i_writecount.counter, $bprm->file->f_inode->i_ino);
+}
+
+kprobe:mmap_region /comm == "sh" || comm == "app"/ {
+    $file = (struct file *)arg0;
+    if ($file != 0 && $file->f_inode != 0) {
+        printf("[mmap_region          ] %s at inode[%p]: %d %d\n", comm, $file->f_inode, $file->f_inode->i_writecount.counter, $file->f_inode->i_ino);
+    }
+}
+
+kprobe:ovl_mmap /comm == "sh" || comm == "app"/ {
+    $file = (struct file *)arg0;
+    printf("[ovl_mmap(file)       ] %s at inode[%p]: %d %d\n", comm, $file->f_inode, $file->f_inode->i_writecount.counter, $file->f_inode->i_ino);
+    printf("[ovl_mmap(realfile)   ] %s at inode[%p]: %d %d\n", comm, ((struct file *)$file->private_data)->f_inode, ((struct file *)$file->private_data)->f_inode->i_writecount.counter, ((struct file *)$file->private_data)->f_inode->i_ino);
+}
+
+kprobe:ovl_open_realfile /comm == "sh" || comm == "app"/ {
+    $file = (struct file *)arg0;
+    printf("[ovl_open_realfile    ] %s at inode[%p]: %d %d\n", comm, $file->f_inode, $file->f_inode->i_writecount.counter, $file->f_inode->i_ino);
+}
+
+kretprobe:ovl_open_realfile /comm == "sh" || comm == "app"/ {
+    $file = (struct file *)retval;
+    printf("[ret ovl_open_realfile] %s at inode[%p]: %d %d\n", comm, $file->f_inode, $file->f_inode->i_writecount.counter, $file->f_inode->i_ino);
+}
+
+kprobe:do_dentry_open /comm == "sh" || comm == "app"/ {
+    $inode = (struct inode *)arg1;
+    printf("[do_dentry_open       ] %s at inode[%p]: %d %d\n", comm, $inode, $inode->i_writecount.counter, $inode->i_ino);
+}
+
+kprobe:ovl_setattr /comm == "sh" || comm == "app"/ {
+    $dentry = (struct dentry *)arg0;
+    printf("[ovl_setattr          ] %s at inode[%p]: %d %d\n", comm, $dentry->d_inode, $dentry->d_inode->i_writecount.counter, $dentry->d_inode->i_ino);
 }
 
 /*
 5.4
 $ ./file_at_open_or_exec.bt
-[open] sh: 0 675400
-[exec] sh: -1 675400
-[open] app: 0 2735
-[open] app: 0 675297
-[open] app: 0 675400
-[open] app: 1 675400
+[do_dentry_open       ] sh at inode[0xffff9719b7ea4020]: 0 675452
+[ovl_open_realfile    ] sh at inode[0xffff9719b7ea4020]: 1 675452
+[do_dentry_open       ] sh at inode[0xffff9719b7e66360]: 0 675452
+[ret ovl_open_realfile] sh at inode[0xffff9719b7e66360]: 1 675452
+[ret do_filp_open     ] sh at inode[0xffff9719b7ea4020]: 1 675452
+[do_dentry_open       ] sh at inode[0xffff9719b7ea1040]: 0 675400
+[ovl_open_realfile    ] sh at inode[0xffff9719b7ea1040]: 0 675400
+[do_dentry_open       ] sh at inode[0xffff9719ba6600e8]: 0 675400
+[ret ovl_open_realfile] sh at inode[0xffff9719ba6600e8]: 0 675400
+[ret do_filp_open     ] sh at inode[0xffff9719b7ea1040]: 0 675400
+[ret do_open_execat   ] sh at inode[0xffff9719b7ea1040]: -1 675400
+[mmap_region          ] app at inode[0xffff9719b7ea1040]: -1 675400
+[ovl_mmap(file)       ] app at inode[0xffff9719b7ea1040]: -2 675400
+[ovl_mmap(realfile)   ] app at inode[0xffff9719ba6600e8]: 0 675400
+[mmap_region          ] app at inode[0xffff9719b7ea1040]: -1 675400
+[ovl_mmap(file)       ] app at inode[0xffff9719b7ea1040]: -2 675400
+[ovl_mmap(realfile)   ] app at inode[0xffff9719ba6600e8]: -1 675400
+[mmap_region          ] app at inode[0xffff9719b7ea1040]: -1 675400
+[ovl_mmap(file)       ] app at inode[0xffff9719b7ea1040]: -2 675400
+[ovl_mmap(realfile)   ] app at inode[0xffff9719ba6600e8]: -2 675400
+[free_bprm            ] app at inode[0xffff9719b7ea1040]: -1 675400
+[do_dentry_open       ] app at inode[0xffff9719b7e8f7c0]: 0 2735
+[ret do_filp_open     ] app at inode[0xffff9719b7e8f7c0]: 0 2735
+[do_dentry_open       ] app at inode[0xffff9719b7ea2b20]: 0 675297
+[ovl_open_realfile    ] app at inode[0xffff9719b7ea2b20]: 0 675297
+[do_dentry_open       ] app at inode[0xffff9719ba6667a8]: 0 675297
+[ret ovl_open_realfile] app at inode[0xffff9719ba6667a8]: 0 675297
+[ret do_filp_open     ] app at inode[0xffff9719b7ea2b20]: 0 675297
+[do_dentry_open       ] app at inode[0xffff9719b7ea1040]: 0 675400
+[ovl_open_realfile    ] app at inode[0xffff9719b7ea1040]: 0 675400
+[do_dentry_open       ] app at inode[0xffff9719ba6600e8]: -3 675400
+[ret ovl_open_realfile] app at inode[0xffff9719ba6600e8]: -3 675400
+[ret do_filp_open     ] app at inode[0xffff9719b7ea1040]: 0 675400
+[do_dentry_open       ] app at inode[0xffff9719b7ea1040]: 0 675400
+[ovl_open_realfile    ] app at inode[0xffff9719b7ea1040]: 1 675400
+[do_dentry_open       ] app at inode[0xffff9719b7e7d688]: 0 675462
+[ret ovl_open_realfile] app at inode[0xffff9719b7e7d688]: 1 675462
+[ovl_setattr          ] app at inode[0xffff9719b7ea1040]: 2 675400
+[ret do_filp_open     ] app at inode[0xffff9719b7ea1040]: 1 675400
 
-[open] sh: 0 675400
-[exec] sh: -1 675400
-[open] app: 0 2735
-[open] app: 0 675297
-[open] app: 0 675400
-[open] app: 0 0
+[do_dentry_open       ] sh at inode[0xffff9719b7ea1040]: 0 675400
+[ovl_open_realfile    ] sh at inode[0xffff9719b7ea1040]: 0 675400
+[do_dentry_open       ] sh at inode[0xffff9719b7e7d688]: 0 675462
+[ret ovl_open_realfile] sh at inode[0xffff9719b7e7d688]: 0 675462
+[ret do_filp_open     ] sh at inode[0xffff9719b7ea1040]: 0 675400
+[ret do_open_execat   ] sh at inode[0xffff9719b7ea1040]: -1 675400
+[mmap_region          ] app at inode[0xffff9719b7ea1040]: -1 675400
+[ovl_mmap(file)       ] app at inode[0xffff9719b7ea1040]: -2 675400
+[ovl_mmap(realfile)   ] app at inode[0xffff9719b7e7d688]: 0 675462
+[mmap_region          ] app at inode[0xffff9719b7ea1040]: -1 675400
+[ovl_mmap(file)       ] app at inode[0xffff9719b7ea1040]: -2 675400
+[ovl_mmap(realfile)   ] app at inode[0xffff9719b7e7d688]: -1 675462
+[mmap_region          ] app at inode[0xffff9719b7ea1040]: -1 675400
+[ovl_mmap(file)       ] app at inode[0xffff9719b7ea1040]: -2 675400
+[ovl_mmap(realfile)   ] app at inode[0xffff9719b7e7d688]: -2 675462
+[free_bprm            ] app at inode[0xffff9719b7ea1040]: -1 675400
+[do_dentry_open       ] app at inode[0xffff9719b7e8f7c0]: 0 2735
+[ret do_filp_open     ] app at inode[0xffff9719b7e8f7c0]: 0 2735
+[do_dentry_open       ] app at inode[0xffff9719b7ea2b20]: 0 675297
+[ovl_open_realfile    ] app at inode[0xffff9719b7ea2b20]: 0 675297
+[do_dentry_open       ] app at inode[0xffff9719ba6667a8]: 0 675297
+[ret ovl_open_realfile] app at inode[0xffff9719ba6667a8]: 0 675297
+[ret do_filp_open     ] app at inode[0xffff9719b7ea2b20]: 0 675297
+[do_dentry_open       ] app at inode[0xffff9719b7ea1040]: 0 675400
+[ovl_open_realfile    ] app at inode[0xffff9719b7ea1040]: 0 675400
+[do_dentry_open       ] app at inode[0xffff9719b7e7d688]: -3 675462
+[ret ovl_open_realfile] app at inode[0xffff9719b7e7d688]: -3 675462
+[ret do_filp_open     ] app at inode[0xffff9719b7ea1040]: 0 675400
+[do_dentry_open       ] app at inode[0xffff9719b7ea1040]: 0 675400
+[ovl_open_realfile    ] app at inode[0xffff9719b7ea1040]: 1 675400
+[do_dentry_open       ] app at inode[0xffff9719b7e7d688]: -3 675462
+[ret ovl_open_realfile] app at inode[(nil)]: 0 0
+[ret do_filp_open     ] app at inode[(nil)]: 0 0
 
 5.15
-[open] sh: 0 1326099
-[exec] sh: -1 1326099
-[open] app: 0 2922
-[open] app: 0 1326009
-[open] app: -1 1326099
-[open] app: 0 0
+[do_dentry_open       ] sh at inode[0xffffa0d643d78e58]: 0 1197881
+[ovl_open_realfile    ] sh at inode[0xffffa0d643d78e58]: 1 1197881
+[do_dentry_open       ] sh at inode[0xffffa0d643808118]: 0 1197881
+[ret ovl_open_realfile] sh at inode[0xffffa0d643808118]: 1 1197881
+[ret do_filp_open     ] sh at inode[0xffffa0d643d78e58]: 1 1197881
+[do_dentry_open       ] sh at inode[0xffffa0d643d782f8]: 0 1326099
+[ovl_open_realfile    ] sh at inode[0xffffa0d643d782f8]: 0 1326099
+[do_dentry_open       ] sh at inode[0xffffa0d645007888]: 0 1326099
+[ret ovl_open_realfile] sh at inode[0xffffa0d645007888]: 0 1326099
+[ret do_filp_open     ] sh at inode[0xffffa0d643d782f8]: 0 1326099
+[ret do_open_execat   ] sh at inode[0xffffa0d643d782f8]: -1 1326099
+[mmap_region          ] app at inode[0xffffa0d643d782f8]: -2 1326099
+[ovl_mmap(file)       ] app at inode[0xffffa0d643d782f8]: -2 1326099
+[ovl_mmap(realfile)   ] app at inode[0xffffa0d645007888]: 0 1326099
+[mmap_region          ] app at inode[0xffffa0d643d782f8]: -2 1326099
+[ovl_mmap(file)       ] app at inode[0xffffa0d643d782f8]: -2 1326099
+[ovl_mmap(realfile)   ] app at inode[0xffffa0d645007888]: 0 1326099
+[mmap_region          ] app at inode[0xffffa0d643d782f8]: -2 1326099
+[ovl_mmap(file)       ] app at inode[0xffffa0d643d782f8]: -2 1326099
+[ovl_mmap(realfile)   ] app at inode[0xffffa0d645007888]: 0 1326099
+[free_bprm            ] app at inode[0xffffa0d643d782f8]: -2 1326099
+[do_dentry_open       ] app at inode[0xffffa0d6505f9180]: 0 2922
+[ret do_filp_open     ] app at inode[0xffffa0d6505f9180]: 0 2922
+[do_dentry_open       ] app at inode[0xffffa0d643d7b900]: 0 1326009
+[ovl_open_realfile    ] app at inode[0xffffa0d643d7b900]: 0 1326009
+[do_dentry_open       ] app at inode[0xffffa0d6504ae628]: 0 1326009
+[ret ovl_open_realfile] app at inode[0xffffa0d6504ae628]: 0 1326009
+[ret do_filp_open     ] app at inode[0xffffa0d643d7b900]: 0 1326009
+[do_dentry_open       ] app at inode[0xffffa0d643d782f8]: -1 1326099
+[ovl_open_realfile    ] app at inode[0xffffa0d643d782f8]: -1 1326099
+[do_dentry_open       ] app at inode[0xffffa0d645007888]: 0 1326099
+[ret ovl_open_realfile] app at inode[0xffffa0d645007888]: 0 1326099
+[ret do_filp_open     ] app at inode[0xffffa0d643d782f8]: -1 1326099
+[do_dentry_open       ] app at inode[0xffffa0d643d782f8]: -1 1326099
+[ret do_filp_open     ] app at inode[(nil)]: 0 0
 */
