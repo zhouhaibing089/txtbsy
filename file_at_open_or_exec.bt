@@ -1,0 +1,38 @@
+#!/usr/bin/bpftrace
+
+#include <linux/fs.h>
+#include <linux/types.h>
+
+kretprobe:do_filp_open /comm == "sh" || comm == "app"/ {
+        printf("[open] %s: %d %d\n", comm, ((struct file *)retval)->f_inode->i_writecount.counter, ((struct file *)retval)->f_inode->i_ino);
+}
+
+kretprobe:do_open_execat /comm == "sh" || comm == "app"/ {
+        printf("[exec] %s: %d %d\n", comm, ((struct file *)retval)->f_inode->i_writecount.counter, ((struct file *)retval)->f_inode->i_ino);
+}
+
+/*
+5.4
+$ ./file_at_open_or_exec.bt
+[open] sh: 0 675400
+[exec] sh: -1 675400
+[open] app: 0 2735
+[open] app: 0 675297
+[open] app: 0 675400
+[open] app: 1 675400
+
+[open] sh: 0 675400
+[exec] sh: -1 675400
+[open] app: 0 2735
+[open] app: 0 675297
+[open] app: 0 675400
+[open] app: 0 0
+
+5.15
+[open] sh: 0 1326099
+[exec] sh: -1 1326099
+[open] app: 0 2922
+[open] app: 0 1326009
+[open] app: -1 1326099
+[open] app: 0 0
+*/
